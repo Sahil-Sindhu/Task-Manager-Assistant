@@ -1,0 +1,591 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Task Manager Chatbot</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @keyframes twinkle {
+            0%, 100% { opacity: 0.3; }
+            50% { opacity: 1; }
+        }
+        
+        @keyframes gentleWave {
+            0%, 100% { transform: translateY(0) scale(1); }
+            50% { transform: translateY(-20px) scale(1.02); }
+        }
+        
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+        
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.05); opacity: 0.8; }
+        }
+        
+        @keyframes slideIn {
+            from { transform: translateY(20px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+        
+        .progress-bar {
+            transition: width 1.5s ease-in-out;
+        }
+        
+        .particle {
+            position: absolute;
+            background: white;
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: -1;
+        }
+        
+        .background-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -2;
+            overflow: hidden;
+        }
+        
+        .background-image {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: url('https://images.unsplash.com/photo-1517336714731-489689fd1ca8?ixlib=rb-4.0.3&auto=format&fit=crop&w=1470&q=80');
+            background-size: cover;
+            background-position: center;
+            animation: gentleWave 30s ease-in-out infinite;
+            opacity: 0.7;
+        }
+        
+        .twinkle-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 600"><circle cx="50" cy="50" r="1.5" fill="white" opacity="0.8"/><circle cx="200" cy="100" r="1" fill="white" opacity="0.6"/><circle cx="300" cy="200" r="1.5" fill="white" opacity="0.7"/><circle cx="450" cy="150" r="1.2" fill="white" opacity="0.9"/><circle cx="600" cy="300" r="1.5" fill="white" opacity="0.5"/><circle cx="750" cy="400" r="1" fill="white" opacity="0.8"/><circle cx="100" cy="500" r="1.5" fill="white" opacity="0.6"/><circle cx="250" cy="350" r="1.2" fill="white" opacity="0.7"/></svg>') repeat;
+            animation: twinkle 6s infinite;
+            pointer-events: none;
+            opacity: 0.8;
+        }
+        
+        .typing-indicator span {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #10b981;
+            margin: 0 2px;
+        }
+        
+        .typing-indicator span:nth-child(1) {
+            animation: bounce 1s infinite;
+        }
+        
+        .typing-indicator span:nth-child(2) {
+            animation: bounce 1s infinite 0.2s;
+        }
+        
+        .typing-indicator span:nth-child(3) {
+            animation: bounce 1s infinite 0.4s;
+        }
+        
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-5px); }
+        }
+        
+        .btn-float {
+            transition: all 0.3s ease;
+        }
+        
+        .btn-float:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+        }
+        
+        .btn-float:active {
+            transform: translateY(-1px);
+        }
+        
+        .message-animate {
+            animation: slideIn 0.4s ease-out forwards;
+        }
+    </style>
+</head>
+<body class="flex items-center justify-center h-screen overflow-hidden p-4 bg-gray-900">
+    <div class="background-container">
+        <div class="background-image"></div>
+        <div class="twinkle-overlay"></div>
+    </div>
+    
+    <div class="w-full max-w-5xl h-[90vh] flex flex-col gap-4">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div class="bg-emerald-600/90 backdrop-blur-sm rounded-xl p-4 text-white shadow-lg">
+                <div class="text-2xl font-bold">45</div>
+                <div class="text-sm opacity-80">Tasks Completed</div>
+                <div class="w-full bg-emerald-800 rounded-full h-2 mt-2">
+                    <div class="progress-bar bg-white h-2 rounded-full" style="width: 75%"></div>
+                </div>
+                <div class="text-xs mt-1">75% completion rate</div>
+            </div>
+            
+            <div class="bg-indigo-600/90 backdrop-blur-sm rounded-xl p-4 text-white shadow-lg">
+                <div class="text-2xl font-bold">12</div>
+                <div class="text-sm opacity-80">Pending Tasks</div>
+                <div class="w-full bg-indigo-800 rounded-full h-2 mt-2">
+                    <div class="progress-bar bg-white h-2 rounded-full" style="width: 40%"></div>
+                </div>
+                <div class="text-xs mt-1">40% urgency level</div>
+            </div>
+            
+            <div class="bg-amber-600/90 backdrop-blur-sm rounded-xl p-4 text-white shadow-lg">
+                <div class="text-2xl font-bold">7</div>
+                <div class="text-sm opacity-80">Due Today</div>
+                <div class="w-full bg-amber-800 rounded-full h-2 mt-2">
+                    <div class="progress-bar bg-white h-2 rounded-full" style="width: 60%"></div>
+                </div>
+                <div class="text-xs mt-1">60% priority coverage</div>
+            </div>
+        </div>
+        
+        <div class="flex-1 bg-white/10 backdrop-blur-md rounded-2xl shadow-2xl border border-white/20 flex flex-col overflow-hidden relative transform transition-all duration-300 hover:shadow-lg">
+            <div class="bg-gradient-to-r from-emerald-600 to-indigo-500 text-white p-4 text-center text-xl font-bold uppercase tracking-wider shadow-md flex items-center justify-center gap-3 hover:from-emerald-500 hover:to-indigo-400 transition-all duration-300">
+                <img src="https://img.icons8.com/color/48/000000/task.png" alt="Task Icon" class="w-10 h-10 rounded-full border-2 border-white shadow-sm hover:scale-110 transition-transform">
+                <span class="hover:text-indigo-100 transition-colors">Task Manager Chatbot</span>
+            </div>
+            
+            <div id="chat-box" class="flex-1 overflow-y-auto p-4 bg-white/5 scroll-smooth">
+                <div class="bg-gradient-to-r from-emerald-600 to-indigo-500 text-white text-center p-3 text-base rounded-lg shadow-sm max-w-[85%] mx-auto mb-3 message-animate">
+                    Hello! I'm your Task Manager Chatbot. Ask me to:
+                    <ul class="list-disc list-inside text-left text-sm mt-1">
+                        <li>Add a new task</li>
+                        <li>List all pending tasks</li>
+                        <li>Set deadlines or priorities</li>
+                        <li>Mark tasks as complete</li>
+                    </ul>
+                </div>
+            </div>
+            
+            <div class="p-3 bg-gradient-to-t from-gray-900/80 to-gray-900/50 border-t border-white/10">
+                <div class="flex items-center gap-2">
+                    <input 
+                        id="user-input" 
+                        type="text" 
+                        placeholder="Add a task or ask about your list..." 
+                        class="flex-1 bg-gray-800/70 text-white placeholder-gray-400 rounded-full py-2 px-4 focus:outline-none focus:ring-2 focus:ring-indigo-500 border border-gray-700 transition-all hover:border-indigo-400 focus:shadow-lg"
+                        autocomplete="off"
+                    >
+                    <button 
+                        onclick="sendMessage()" 
+                        class="btn-float bg-gradient-to-r from-emerald-500 to-emerald-400 text-white p-2 rounded-full hover:from-emerald-600 hover:to-emerald-500 active:scale-95 transition-all shadow-sm hover:shadow-lg"
+                    >
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
+                        </svg>
+                    </button>
+                    
+                    <div class="relative">
+                        <button 
+                            id="menu-btn" 
+                            class="btn-float bg-gray-800/70 text-gray-300 p-2 rounded-full hover:bg-gray-700/70 active:scale-95 transition-all hover:text-white"
+                        >
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 12h.01M12 12h.01M19 12h.01M6 12a1 1 0 11-2 0 1 1 0 012 0zm7 0a1 1 0 11-2 0 1 1 0 012 0zm7 0a1 1 0 11-2 0 1 1 0 012 0z" />
+                            </svg>
+                        </button>
+                        
+                        <div id="menu-dropdown" class="hidden absolute bottom-12 right-0 w-40 bg-gray-800 rounded-md shadow-lg z-10 border border-gray-700 overflow-hidden">
+                            <button 
+                                id="voice-btn" 
+                                class="w-full px-3 py-2 text-left text-sm text-gray-300 hover:bg-gray-700 flex items-center gap-2 rounded-t-md transition-all hover:pl-4 hover:text-indigo-300"
+                            >
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
+                                </svg>
+                                Voice Input
+                            </button>
+                            <button 
+                                id="theme-btn" 
+                                class="w-full px-3 py-2 text-left text-sm text-gray-300 hover:bg-gray-700 flex items-center gap-2 transition-all hover:pl-4 hover:text-amber-300"
+                            >
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
+                                </svg>
+                                Toggle Theme
+                            </button>
+                            <button 
+                                id="delete-btn" 
+                                class="w-full px-3 py-2 text-left text-sm text-gray-300 hover:bg-gray-700 flex items-center gap-2 rounded-b-md transition-all hover:pl-4 hover:text-red-300"
+                            >
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                </svg>
+                                Clear Chat
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let tasks = {
+            completed: 45,
+            pending: 12,
+            dueToday: 7,
+            list: []
+        };
+
+        function createParticles() {
+            const container = document.querySelector('.background-container');
+            const particleCount = window.innerWidth < 768 ? 30 : 50;
+            
+            for (let i = 0; i < particleCount; i++) {
+                const particle = document.createElement('div');
+                particle.className = 'particle';
+                
+                const size = Math.random() * 3 + 1;
+                const posX = Math.random() * window.innerWidth;
+                const posY = Math.random() * window.innerHeight;
+                const duration = Math.random() * 20 + 10;
+                const delay = Math.random() * 5;
+                const opacity = Math.random() * 0.5 + 0.1;
+                
+                particle.style.width = `${size}px`;
+                particle.style.height = `${size}px`;
+                particle.style.left = `${posX}px`;
+                particle.style.top = `${posY}px`;
+                particle.style.animation = `float ${duration}s ease-in-out ${delay}s infinite`;
+                particle.style.opacity = opacity;
+                
+                container.appendChild(particle);
+            }
+        }
+        
+        document.addEventListener('DOMContentLoaded', createParticles);
+        
+        document.getElementById("user-input").addEventListener("keypress", function(event) {
+            if (event.key === "Enter") {
+                event.preventDefault();
+                sendMessage();
+            }
+        });
+
+        document.getElementById('menu-btn').addEventListener('click', function(e) {
+            e.stopPropagation();
+            const dropdown = document.getElementById('menu-dropdown');
+            dropdown.classList.toggle('hidden');
+            
+            if (!dropdown.classList.contains('hidden')) {
+                dropdown.style.animation = 'slideIn 0.3s ease-out forwards';
+            }
+        });
+
+        document.addEventListener('click', function() {
+            document.getElementById('menu-dropdown').classList.add('hidden');
+        });
+
+        async function isTaskRelated(question) {
+            const taskTerms = [
+                'task', 'todo', 'list', 'complete', 'done', 
+                'pending', 'due', 'deadline', 'priority', 'add',
+                'remove', 'schedule', 'manage', 'organize', 'plan'
+            ];
+            
+            const lowerQuestion = question.toLowerCase();
+            return taskTerms.some(term => lowerQuestion.includes(term));
+        }
+
+        function showTypingIndicator() {
+            const chatBox = document.getElementById('chat-box');
+            const typingDiv = document.createElement('div');
+            typingDiv.className = 'typing-indicator max-w-[80%] mb-3 flex space-x-1 pl-2';
+            typingDiv.innerHTML = `<span></span><span></span><span></span>`;
+            chatBox.appendChild(typingDiv);
+            chatBox.scrollTop = chatBox.scrollHeight;
+            return typingDiv;
+        }
+
+        function removeTypingIndicator(indicator) {
+            if (indicator && indicator.parentNode) {
+                indicator.parentNode.removeChild(indicator);
+            }
+        }
+
+        function addUserMessage(message) {
+            const chatBox = document.getElementById('chat-box');
+            const msgDiv = document.createElement('div');
+            msgDiv.className = 'bg-gradient-to-r from-emerald-600 to-indigo-500 text-white p-3 rounded-lg shadow-sm max-w-[80%] ml-auto mb-3 message-animate';
+            msgDiv.textContent = message;
+            chatBox.appendChild(msgDiv);
+            chatBox.scrollTop = chatBox.scrollHeight;
+        }
+
+        function addBotMessage(message) {
+            const chatBox = document.getElementById('chat-box');
+            const msgDiv = document.createElement('div');
+            msgDiv.className = 'bg-gray-700/70 text-gray-100 p-3 rounded-lg shadow-sm max-w-[80%] mb-3 message-animate';
+            
+            const ul = document.createElement('ul');
+            ul.className = 'list-disc list-inside text-left';
+            
+            const points = message.split('\n').filter(point => point.trim() !== '');
+            points.forEach(point => {
+                const li = document.createElement('li');
+                li.textContent = point.replace(/^- /, '');
+                ul.appendChild(li);
+            });
+            
+            msgDiv.appendChild(ul);
+            chatBox.appendChild(msgDiv);
+            chatBox.scrollTop = chatBox.scrollHeight;
+        }
+
+        async function getTaskResponse(question) {
+            const lowerQuestion = question.toLowerCase();
+            let response = '';
+
+            if (lowerQuestion.includes('add')) {
+                const taskName = question.replace(/add/i, '').trim();
+                tasks.pending++;
+                tasks.list.push({ name: taskName, status: 'pending', due: 'N/A' });
+                response = `- Added task: "${taskName}"\n- Status: Pending\n- Current pending tasks: ${tasks.pending}`;
+            } else if (lowerQuestion.includes('list') || lowerQuestion.includes('pending')) {
+                if (tasks.list.length === 0) {
+                    response = '- No pending tasks yet!\n- Add some tasks to get started.';
+                } else {
+                    response = '- Your pending tasks:\n' + tasks.list.filter(t => t.status === 'pending').map(t => `- ${t.name} (Due: ${t.due})`).join('\n');
+                }
+            } else if (lowerQuestion.includes('complete') || lowerQuestion.includes('done')) {
+                const taskName = question.replace(/(complete|done)/i, '').trim();
+                const task = tasks.list.find(t => t.name.toLowerCase().includes(taskName.toLowerCase()));
+                if (task) {
+                    task.status = 'completed';
+                    tasks.completed++;
+                    tasks.pending--;
+                    response = `- Marked "${task.name}" as completed\n- Completed tasks: ${tasks.completed}\n- Pending tasks: ${tasks.pending}`;
+                } else {
+                    response = `- Task "${taskName}" not found\n- Check your task list with "list pending"`;
+                }
+            } else if (lowerQuestion.includes('due') || lowerQuestion.includes('deadline')) {
+                const parts = question.split('due');
+                const taskName = parts[0].replace(/set/i, '').trim();
+                const dueDate = parts[1] ? parts[1].trim() : 'Today';
+                const task = tasks.list.find(t => t.name.toLowerCase().includes(taskName.toLowerCase()));
+                if (task) {
+                    task.due = dueDate;
+                    response = `- Set due date for "${task.name}" to ${dueDate}\n- Updated task list`;
+                } else {
+                    response = `- Task "${taskName}" not found\n- Add it first with "add [task name]"`;
+                }
+            } else {
+                response = `- I can help you manage tasks!\n- Try: "add [task]", "list pending", "complete [task]", or "set [task] due [date]"`;
+            }
+
+            return response;
+        }
+
+        async function sendMessage() {
+            const inputField = document.getElementById('user-input');
+            const message = inputField.value.trim();
+            
+            if (!message) return;
+
+            addUserMessage(message);
+            inputField.value = '';
+            
+            const typingIndicator = showTypingIndicator();
+            
+            try {
+                if (!await isTaskRelated(message)) {
+                    removeTypingIndicator(typingIndicator);
+                    addBotMessage("- I’m your task manager!\n- Please ask about tasks or schedules.");
+                    return;
+                }
+                
+                const response = await getTaskResponse(message);
+                removeTypingIndicator(typingIndicator);
+                addBotMessage(response);
+                
+                animateProgressBars();
+                updateStats();
+            } catch (error) {
+                console.error("Error:", error);
+                removeTypingIndicator(typingIndicator);
+                addBotMessage("- Oops, something went wrong.\n- Let’s try that again!");
+            }
+        }
+
+        function animateProgressBars() {
+            const bars = document.querySelectorAll('.progress-bar');
+            bars.forEach(bar => {
+                const currentWidth = parseFloat(bar.style.width) || 0;
+                const newWidth = Math.min(currentWidth + (Math.random() * 5), 100);
+                bar.style.width = `${newWidth}%`;
+            });
+        }
+
+        function updateStats() {
+            document.querySelector('.bg-emerald-600\\/90 .text-2xl').textContent = tasks.completed;
+            document.querySelector('.bg-indigo-600\\/90 .text-2xl').textContent = tasks.pending;
+            document.querySelector('.bg-amber-600\\/90 .text-2xl').textContent = tasks.dueToday;
+        }
+
+        function initProgressBars() {
+            const bars = document.querySelectorAll('.progress-bar');
+            const widths = ['75%', '40%', '60%'];
+            bars.forEach((bar, index) => {
+                bar.style.width = widths[index] || '50%';
+            });
+        }
+
+        let isDarkTheme = true;
+        document.getElementById('theme-btn').addEventListener('click', function() {
+            const body = document.body;
+            const backgroundImage = document.querySelector('.background-image');
+            const twinkleOverlay = document.querySelector('.twinkle-overlay');
+            
+            if (isDarkTheme) {
+                body.classList.remove('bg-gray-900');
+                body.classList.add('bg-gray-100');
+                backgroundImage.style.opacity = '0.3';
+                twinkleOverlay.style.opacity = '0.5';
+                
+                document.querySelector('.bg-white\\/10').className = 'flex-1 bg-white/90 backdrop-blur-sm rounded-2xl shadow-2xl border border-gray-300 flex flex-col overflow-hidden';
+                document.querySelector('.from-emerald-600').className = 'bg-gradient-to-r from-emerald-500 to-indigo-400 text-white p-4 text-center text-xl font-bold uppercase tracking-wider shadow-md flex items-center justify-center gap-3';
+                document.getElementById('chat-box').className = 'flex-1 overflow-y-auto p-4 bg-white';
+                document.querySelector('.from-gray-900\\/80').className = 'p-3 bg-gray-100 border-t border-gray-300';
+                document.getElementById('user-input').className = 'flex-1 bg-white text-gray-800 placeholder-gray-500 rounded-full py-2 px-4 focus:outline-none focus:ring-2 focus:ring-indigo-500 border border-gray-300 transition-all';
+                document.querySelector('.bg-gray-800\\/70').className = 'bg-gray-200 text-gray-700 p-2 rounded-full hover:bg-gray-300 active:scale-95 transition-all';
+                document.getElementById('menu-dropdown').className = 'hidden absolute bottom-12 right-0 w-40 bg-white rounded-md shadow-lg z-10 border border-gray-300';
+            } else {
+                body.classList.remove('bg-gray-100');
+                body.classList.add('bg-gray-900');
+                backgroundImage.style.opacity = '0.7';
+                twinkleOverlay.style.opacity = '0.8';
+                
+                document.querySelector('.bg-white\\/90').className = 'flex-1 bg-white/10 backdrop-blur-md rounded-2xl shadow-2xl border border-white/20 flex flex-col overflow-hidden';
+                document.querySelector('.from-emerald-500').className = 'bg-gradient-to-r from-emerald-600 to-indigo-500 text-white p-4 text-center text-xl font-bold uppercase tracking-wider shadow-md flex items-center justify-center gap-3';
+                document.getElementById('chat-box').className = 'flex-1 overflow-y-auto p-4 bg-white/5';
+                document.querySelector('.bg-gray-100').className = 'p-3 bg-gradient-to-t from-gray-900/80 to-gray-900/50 border-t border-white/10';
+                document.getElementById('user-input').className = 'flex-1 bg-gray-800/70 text-white placeholder-gray-400 rounded-full py-2 px-4 focus:outline-none focus:ring-2 focus:ring-indigo-500 border border-gray-700 transition-all';
+                document.querySelector('.bg-gray-200').className = 'bg-gray-800/70 text-gray-300 p-2 rounded-full hover:bg-gray-700/70 active:scale-95 transition-all';
+                document.getElementById('menu-dropdown').className = 'hidden absolute bottom-12 right-0 w-40 bg-gray-800 rounded-md shadow-lg z-10 border border-gray-700';
+            }
+            
+            isDarkTheme = !isDarkTheme;
+            document.getElementById('menu-dropdown').classList.add('hidden');
+        });
+
+        document.getElementById('voice-btn').addEventListener('click', function() {
+            const inputField = document.getElementById('user-input');
+            const voiceBtn = this;
+
+            voiceBtn.classList.add('animate-pulse', 'bg-indigo-500', 'text-white');
+            inputField.placeholder = 'Listening...';
+
+            if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
+                const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
+                recognition.lang = 'en-US';
+                recognition.interimResults = false;
+                recognition.maxAlternatives = 1;
+
+                recognition.onstart = function() {
+                    console.log('Voice recognition started.');
+                };
+
+                recognition.onresult = function(event) {
+                    const speechResult = event.results[0][0].transcript;
+                    inputField.value = speechResult;
+                    sendMessage();
+                };
+
+                recognition.onerror = function(event) {
+                    console.error('Speech recognition error:', event.error);
+                    let errorMessage = '';
+                    switch (event.error) {
+                        case 'no-speech':
+                            errorMessage = 'No speech detected. Please speak clearly!';
+                            break;
+                        case 'audio-capture':
+                            errorMessage = 'Microphone issue. Check your device!';
+                            break;
+                        case 'not-allowed':
+                            errorMessage = 'Microphone access denied. Allow permissions!';
+                            break;
+                        case 'network':
+                            errorMessage = 'Network error. Check your connection!';
+                            break;
+                        default:
+                            errorMessage = 'Speech recognition failed. Try again!';
+                    }
+                    inputField.value = errorMessage;
+                };
+
+                recognition.onend = function() {
+                    console.log('Voice recognition ended.');
+                    voiceBtn.classList.remove('animate-pulse', 'bg-indigo-500', 'text-white');
+                    inputField.placeholder = 'Add a task or ask about your list...';
+                };
+
+                try {
+                    recognition.start();
+                } catch (error) {
+                    console.error('Error starting recognition:', error);
+                    inputField.value = 'Failed to start voice recognition. Try again!';
+                    voiceBtn.classList.remove('animate-pulse', 'bg-indigo-500', 'text-white');
+                }
+            } else {
+                inputField.value = 'Speech recognition not supported in this browser.';
+                voiceBtn.classList.remove('animate-pulse', 'bg-indigo-500', 'text-white');
+            }
+            
+            document.getElementById('menu-dropdown').classList.add('hidden');
+        });
+
+        document.getElementById('delete-btn').addEventListener('click', function() {
+            const chatBox = document.getElementById('chat-box');
+            
+            chatBox.classList.add('animate-pulse');
+            
+            setTimeout(() => {
+                chatBox.innerHTML = '';
+                chatBox.classList.remove('animate-pulse');
+                
+                const welcomeMessage = document.createElement('div');
+                welcomeMessage.className = 'bg-gradient-to-r from-emerald-600 to-indigo-500 text-white text-center p-3 text-base rounded-lg shadow-sm max-w-[85%] mx-auto mb-3 message-animate';
+                welcomeMessage.innerHTML = `Hello! I'm your Task Manager Chatbot. Ask me to:
+                    <ul class="list-disc list-inside text-left text-sm mt-1">
+                        <li>Add a new task</li>
+                        <li>List all pending tasks</li>
+                        <li>Set deadlines or priorities</li>
+                        <li>Mark tasks as complete</li>
+                    </ul>`;
+                chatBox.appendChild(welcomeMessage);
+                
+                tasks = { completed: 45, pending: 12, dueToday: 7, list: [] };
+                updateStats();
+                initProgressBars();
+                
+                document.getElementById('menu-dropdown').classList.add('hidden');
+            }, 300);
+        });
+
+        document.addEventListener('DOMContentLoaded', function() {
+            createParticles();
+            initProgressBars();
+        });
+    </script>
+</body>
+</html>
